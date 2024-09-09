@@ -1,0 +1,22 @@
+[project]
+name = "my-data-science-project"
+version = "0.1.0"
+description = "A data science project using Python 3.10"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+dependencies = [
+    "numpy>=1.22.0",
+    "pandas>=1.4.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.2",
+    "scikit-learn>=1.0.2",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.9.0",
+    "openai>=1.43.0",
+    "ruff>=0.6.3",
+    "plotly>=5.24.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
