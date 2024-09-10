@@ -11,7 +11,7 @@ class TradeModelView {
         this.maxArrowWidth = 100;
         this.minArrowWidth = 1;
         this.curveStrength = 0.2;
-        this.arrowWidthExponent = 0.2;
+        this.arrowWidthExponent = 0.3;
 
         this.setupEventListeners();
         this.setupUI();
