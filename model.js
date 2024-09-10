@@ -87,7 +87,7 @@ class TradeModel {
         // Set convergence parameters
         const tol = 0.0001;
         const psi = 0.1;
-        const maxIter = 500;
+        const maxIter = 5000;
 
         // Solve for equilibrium trade flows
         let iter = 0;
@@ -99,6 +99,8 @@ class TradeModel {
             iter++;
             [w, X, Z, Y] = this.updateTradeFlows(w, L_S, T, d, dist, psi);
         }
+
+        [w, X, Z, Y] = this.updateTradeFlows(w, L_S, T, d, dist, psi);
 
         return [w, X, Y];
     }
@@ -114,8 +116,8 @@ class TradeModel {
         });
 
         w = w.map((w_i, i) => w_i * (1 + psi * (Z[i] / L_S[i])));        
-        let w_1 = w[0];
-        w = w.map(w_i => w_i / w_1);
+        //let w_1 = w[0];
+        //w = w.map(w_i => w_i / w_1);
         
         return [w, X, Z, Y];
     }

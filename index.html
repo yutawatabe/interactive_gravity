@@ -42,6 +42,16 @@
         input[type="number"] {
             width: 50px;
         }
+        .matrix-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .matrix {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
@@ -72,8 +82,11 @@
         </div>
     </div>
     
-    <div id="distanceMatrix"></div>
-    
+    <div class="matrix-container">
+        <div id="distanceMatrix" class="matrix"></div>
+        <div id="tradeMatrix" class="matrix"></div>
+    </div>
+        
     <div id="equilibriumResults"></div>
 
     <script src="model.js"></script>

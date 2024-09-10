@@ -7,10 +7,11 @@ class TradeModelView {
         this.selectedCountryIndex = -1;
 
         // Arrow drawing parameters
-        this.arrowHeadLength = 15;
-        this.maxArrowWidth = 15;
+        this.arrowHeadLength = 20;
+        this.maxArrowWidth = 100;
         this.minArrowWidth = 1;
         this.curveStrength = 0.2;
+        this.arrowWidthExponent = 0.2;
 
         this.setupEventListeners();
         this.setupUI();
@@ -123,12 +124,8 @@ class TradeModelView {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         const [w, tradeFlows] = this.model.calculateEquilibriumTradeFlows();
-        this.drawTradeFlows(tradeFlows)
-        //if (this.model.countries.length >= 1) {
-        //    if (tradeFlows) {
-        //        this.drawTradeFlows(tradeFlows);
-        //    }
-        //}
+        this.drawTradeFlows(tradeFlows);
+        this.displayTradeMatrix(tradeFlows);
         
         this.model.countries.forEach((country, index) => this.drawCountry(country, index));
         
@@ -136,6 +133,7 @@ class TradeModelView {
         this.updatePointSelect();
         this.displayDistanceMatrix();
     }
+
 
     drawCountry(country, index) {
         this.ctx.beginPath();
@@ -174,7 +172,9 @@ class TradeModelView {
     }
 
     mapFlowToArrowWidth(flow, maxFlow) {
-        return ((flow / maxFlow) * (this.maxArrowWidth - this.minArrowWidth)) + this.minArrowWidth;
+        // Apply non-linear scaling
+        const normalizedFlow = Math.pow(flow / maxFlow, this.arrowWidthExponent);
+        return ((normalizedFlow) * (this.maxArrowWidth - this.minArrowWidth)) + this.minArrowWidth;
     }
 
     drawCurvedArrow(start, end, width, tradeValue) {
@@ -296,12 +296,44 @@ class TradeModelView {
                         const newTariff = parseFloat(event.target.value);
                         if (!isNaN(newTariff) && newTariff >= 1) {
                             this.model.updateTariff(i, j, newTariff);
-                            this.redraw(); // Redraw after tariff update
+                            this.redraw();
                         } else {
                             event.target.value = tariffMatrix[i][j].toFixed(1);
                         }
                     });
                 }
+                tr.appendChild(td);
+            });
+            table.appendChild(tr);
+        });
+        
+        matrixElement.appendChild(table);
+    }
+
+    displayTradeMatrix(tradeFlows) {
+        const matrixElement = document.getElementById('tradeMatrix');
+        matrixElement.innerHTML = '<h3>Trade Flow Matrix:</h3>';
+        const table = document.createElement('table');
+        
+        // Add header row
+        const headerRow = document.createElement('tr');
+        headerRow.appendChild(document.createElement('th'));
+        this.model.countries.forEach((_, index) => {
+            const th = document.createElement('th');
+            th.textContent = `Country ${index + 1}`;
+            headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+
+        tradeFlows.forEach((row, i) => {
+            const tr = document.createElement('tr');
+            const th = document.createElement('th');
+            th.textContent = `Country ${i + 1}`;
+            tr.appendChild(th);
+            
+            row.forEach((flow, j) => {
+                const td = document.createElement('td');
+                td.textContent = (flow * 100).toFixed(2);
                 tr.appendChild(td);
             });
             table.appendChild(tr);
