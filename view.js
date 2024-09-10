@@ -19,7 +19,10 @@ class TradeModelView {
     setupEventListeners() {
         this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.canvas.addEventListener('mouseup', () => this.draggingIndex = -1);
+        this.canvas.addEventListener('mouseup', () => {
+            this.draggingIndex = -1;
+            this.redraw(); // Redraw after dragging ends
+        });
     }
 
     setupUI() {
@@ -32,14 +35,26 @@ class TradeModelView {
         this.productivityValue = document.getElementById('productivityValue');
         this.populationValue = document.getElementById('populationValue');
 
-        this.addButton.addEventListener('click', () => this.addRandomCountry());
-        this.removeButton.addEventListener('click', () => this.removeCountry());
+        this.addButton.addEventListener('click', () => {
+            this.addRandomCountry();
+            this.redraw();
+        });
+        this.removeButton.addEventListener('click', () => {
+            this.removeCountry();
+            this.redraw();
+        });
         this.pointSelect.addEventListener('change', () => {
             this.selectedCountryIndex = parseInt(this.pointSelect.value);
             this.updateSliders();
         });
-        this.productivitySlider.addEventListener('input', () => this.updateCountryAttribute('productivity'));
-        this.populationSlider.addEventListener('input', () => this.updateCountryAttribute('population'));
+        this.productivitySlider.addEventListener('input', () => {
+            this.updateCountryAttribute('productivity');
+            this.redraw();
+        });
+        this.populationSlider.addEventListener('input', () => {
+            this.updateCountryAttribute('population');
+            this.redraw();
+        });    
     }
 
     handleMouseDown(event) {
@@ -108,7 +123,7 @@ class TradeModelView {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         if (this.model.countries.length >= 2) {
-            const [_, tradeFlows] = this.model.calculateEquilibriumTradeFlows();
+            const [w, tradeFlows] = this.model.calculateEquilibriumTradeFlows();
             if (tradeFlows) {
                 this.drawTradeFlows(tradeFlows);
             }
@@ -252,7 +267,6 @@ class TradeModelView {
         });
         table.appendChild(headerRow);
 
-        // Add data rows
         distanceMatrix.forEach((row, i) => {
             const tr = document.createElement('tr');
             const th = document.createElement('th');
@@ -267,7 +281,7 @@ class TradeModelView {
                         const newTariff = parseFloat(event.target.value);
                         if (!isNaN(newTariff) && newTariff >= 1) {
                             this.model.updateTariff(i, j, newTariff);
-                            this.redraw();
+                            this.redraw(); // Redraw after tariff update
                         } else {
                             event.target.value = tariffMatrix[i][j].toFixed(1);
                         }
