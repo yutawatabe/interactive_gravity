@@ -7,8 +7,8 @@ class TradeModelView {
         this.selectedCountryIndex = -1;
 
         // Arrow drawing parameters
-        this.arrowHeadLength = 10;
-        this.maxArrowWidth = 10;
+        this.arrowHeadLength = 15;
+        this.maxArrowWidth = 15;
         this.minArrowWidth = 1;
         this.curveStrength = 0.2;
 
@@ -122,12 +122,13 @@ class TradeModelView {
     redraw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (this.model.countries.length >= 2) {
-            const [w, tradeFlows] = this.model.calculateEquilibriumTradeFlows();
-            if (tradeFlows) {
-                this.drawTradeFlows(tradeFlows);
-            }
-        }
+        const [w, tradeFlows] = this.model.calculateEquilibriumTradeFlows();
+        this.drawTradeFlows(tradeFlows)
+        //if (this.model.countries.length >= 1) {
+        //    if (tradeFlows) {
+        //        this.drawTradeFlows(tradeFlows);
+        //    }
+        //}
         
         this.model.countries.forEach((country, index) => this.drawCountry(country, index));
         
@@ -166,7 +167,7 @@ class TradeModelView {
                     const endCountry = this.model.countries[j];
                     const arrowWidth = this.mapFlowToArrowWidth(flow, maxFlow);
                     
-                    this.drawCurvedArrow(startCountry, endCountry, arrowWidth);
+                    this.drawCurvedArrow(startCountry, endCountry, arrowWidth, flow);
                 }
             }
         }
@@ -176,7 +177,7 @@ class TradeModelView {
         return ((flow / maxFlow) * (this.maxArrowWidth - this.minArrowWidth)) + this.minArrowWidth;
     }
 
-    drawCurvedArrow(start, end, width) {
+    drawCurvedArrow(start, end, width, tradeValue) {
         const midX = (start.x + end.x) / 2;
         const midY = (start.y + end.y) / 2;
         
@@ -198,6 +199,20 @@ class TradeModelView {
         
         const angle = Math.atan2(end.y - controlY, end.x - controlX);
         this.drawArrowHead(end.x, end.y, angle, width);
+
+        const labelX = midX + normalX * this.curveStrength * 1.2;
+        const labelY = midY + normalY * this.curveStrength * 1.2;
+        
+        this.ctx.save();
+        this.ctx.translate(labelX, labelY);
+        this.ctx.rotate(Math.atan2(dy, dx));
+        
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = '10px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText((tradeValue * 100).toFixed(2), 0, 10);
+        
+        this.ctx.restore();
     }
 
     drawArrowHead(x, y, angle, width) {

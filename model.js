@@ -72,11 +72,12 @@ class TradeModel {
 
     calculateEquilibriumTradeFlows() {
         const N = this.countries.length;
-        if (N < 2) return null; // Not enough countries for trade
+        //if (N < 2) return null; // Not enough countries for trade
 
         const L_S = this.countries.map(country => country.population);
         const T = this.countries.map(country => country.productivity);
         const d = this.tariffMatrix; // Using tariff matrix as trade costs
+        const dist = this.distanceMatrix;
 
         // Initialize trade flows
         let X = Array(N).fill().map(() => Array(N).fill(1));
@@ -92,30 +93,34 @@ class TradeModel {
         let iter = 0;
         let w = Array(N).fill(1);
         let Z = Array(N).fill(1);
+        let Y = Array(N).fill(1);
 
         while (Math.max(...Z.flat().map(Math.abs)) > tol && iter < maxIter) {
             iter++;
-            [w, X, Z] = this.updateTradeFlows(w, L_S, T, d, psi);
+            [w, X, Z, Y] = this.updateTradeFlows(w, L_S, T, d, dist, psi);
         }
 
-        return [w, X, Z];
+        return [w, X, Y];
     }
 
-    updateTradeFlows(w, L_S, T, d, psi) {
+    updateTradeFlows(w, L_S, T, d, dist, psi) {
         const N = this.countries.length;
-        let X = this.calculateTradeFlows(w, L_S, T, d);
-        
+        let X = this.calculateTradeFlows(w, L_S, T, d, dist);
+        let Y = X.map(row => row.reduce((sum, x) => sum + x, 0));
+
         let Z = X.map((row, i) => {
-            const totalExports = row.reduce((sum, x) => sum + x, 0);
-            return (totalExports - w[i] * L_S[i]) / w[i];
+            Y = row.reduce((sum, x) => sum + x, 0);
+            return (Y - w[i] * L_S[i]) / w[i];
         });
 
-        w = w.map((w_i, i) => w_i * (1 + psi * (Z[i] / L_S[i])));
+        w = w.map((w_i, i) => w_i * (1 + psi * (Z[i] / L_S[i])));        
+        let w_1 = w[0];
+        w = w.map(w_i => w_i / w_1);
         
-        return [w, X, Z];
+        return [w, X, Z, Y];
     }
 
-    calculateTradeFlows(w, L_S, T, d) {
+    calculateTradeFlows(w, L_S, T, d, dist) {
         const theta = 4; // Trade elasticity
         const N = this.countries.length;
         const Xn = w.map((wi, i) => wi * L_S[i]);
@@ -126,7 +131,7 @@ class TradeModel {
 
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < N; j++) {
-                pi_num[i][j] = T[i] * Math.pow(w[i] * d[i][j], -theta);
+                pi_num[i][j] = T[i] / dist[i][j] * Math.pow(w[i] * d[i][j], -theta);
                 Phi[j] += pi_num[i][j];
             }
         }
