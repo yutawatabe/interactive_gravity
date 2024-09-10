@@ -3,88 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Gravity Model</title>
+    <title>Interactive Gravity Model of International Trade</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        canvas {
-            border: 1px solid black;
-            display: block;
-            margin: 20px 0;
+        #tradeCanvas {
+            border: 1px solid #000;
+            margin-bottom: 20px;
         }
         .controls {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 10px;
             margin-bottom: 20px;
         }
         .attribute-controls {
-            margin-top: 20px;
-        }
-        .attribute-controls > div {
-            margin-bottom: 10px;
-        }
-        .attribute-controls label {
-            display: inline-block;
-            width: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         #distanceMatrix {
             margin-top: 20px;
-            font-family: monospace;
         }
-        #distanceMatrix table {
+        table {
             border-collapse: collapse;
         }
-        #distanceMatrix td {
-            border: 1px solid #ddd;
-            padding: 4px 8px;
-            text-align: right;
-        }
-        #distanceMatrix table {
-        border-collapse: collapse;
-        }
-        #tradeFlowTable {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        #tradeFlowTable th, #tradeFlowTable td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: right;
-        }
-
-        #tradeFlowTable th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-
-        #tradeFlowTable tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        #distanceMatrix th, #distanceMatrix td {
+        th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
         }
-        #distanceMatrix input {
+        input[type="number"] {
             width: 50px;
         }
     </style>
 </head>
 <body>
-    <h1>Interactive Graivty Model</h1>
-    <canvas id="tradeCanvas" width="300" height="300"></canvas>
+    <h1>Interactive Gravity Model of International Trade</h1>
+    
+    <canvas id="tradeCanvas" width="600" height="400"></canvas>
+    
     <div class="controls">
         <button id="addButton">Add Country</button>
         <button id="removeButton">Remove Country</button>
-        <p id="pointCount">Points: 0/5</p>
+        <span id="pointCount">Points: 0/5</span>
     </div>
+    
     <div class="attribute-controls">
         <div>
             <label for="pointSelect">Select Country:</label>
@@ -92,19 +62,23 @@
         </div>
         <div>
             <label for="productivitySlider">Productivity:</label>
-            <input type="range" id="productivitySlider" min="0.5" max="2.5" step="0.1" value="1">
+            <input type="range" id="productivitySlider" min="0.1" max="10" step="0.1" value="1">
             <span id="productivityValue">1</span>
         </div>
         <div>
             <label for="populationSlider">Population:</label>
-            <input type="range" id="populationSlider" min="0.5" max="2.5" step="0.1" value="1">
+            <input type="range" id="populationSlider" min="0.1" max="10" step="0.1" value="1">
             <span id="populationValue">1</span>
         </div>
     </div>
+    
     <div id="distanceMatrix"></div>
+    
     <div id="equilibriumResults"></div>
 
+    <script src="model.js"></script>
+    <script src="view.js"></script>
+    <script src="main.js" type="module" defer></script>
 
-    <script src="trade-model.js"></script>
 </body>
 </html>

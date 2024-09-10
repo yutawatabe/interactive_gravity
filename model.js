@@ -35,7 +35,6 @@ class TradeModel {
     updateCountryAttribute(index, attribute, value) {
         if (index >= 0 && index < this.countries.length) {
             this.countries[index][attribute] = value;
-            this.updateMatrices();
         }
     }
 
@@ -46,11 +45,11 @@ class TradeModel {
 
     calculateDistance(country1, country2) {
         if (country1 === country2) {
-            return 0.1; // Within-country distance
+            return 0.1;
         }
         const dx = country1.x - country2.x;
         const dy = country1.y - country2.y;
-        return Math.sqrt(dx * dx + dy * dy) / 10; // Scale distance
+        return Math.sqrt(dx * dx + dy * dy) / 10;
     }
 
     calculateDistanceMatrix() {
@@ -66,7 +65,7 @@ class TradeModel {
     }
 
     updateTariff(i, j, value) {
-        if (i !== j && i < this.countries.length && j < this.countries.length) {
+        if (i !== j) {
             this.tariffMatrix[i][j] = value;
         }
     }
@@ -155,4 +154,5 @@ class TradeModel {
     getTariffMatrix() {
         return this.tariffMatrix;
     }
+
 }
