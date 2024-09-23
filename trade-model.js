@@ -46,7 +46,7 @@ class TradeModel {
 
     calculateDistance(country1, country2) {
         if (country1 === country2) {
-            return 0.1; // Within-country distance
+            return 1; // Within-country distance
         }
         const dx = country1.x - country2.x;
         const dy = country1.y - country2.y;
@@ -61,7 +61,7 @@ class TradeModel {
 
     initializeTariffMatrix() {
         this.tariffMatrix = this.countries.map((_, i) => 
-            this.countries.map((_, j) => i === j ? 1 : 1.5)
+            this.countries.map((_, j) => i === j ? 1 : 1.0)
         );
     }
 
@@ -78,6 +78,7 @@ class TradeModel {
         const L_S = this.countries.map(country => country.population);
         const T = this.countries.map(country => country.productivity);
         const d = this.tariffMatrix; // Using tariff matrix as trade costs
+        const dist = this.distanceMatrix; // Distance matrix
 
         // Initialize trade flows
         let X = Array(N).fill().map(() => Array(N).fill(1));
@@ -96,15 +97,15 @@ class TradeModel {
 
         while (Math.max(...Z.flat().map(Math.abs)) > tol && iter < maxIter) {
             iter++;
-            [w, X, Z] = this.updateTradeFlows(w, L_S, T, d, psi);
+            [w, X, Z] = this.updateTradeFlows(w, L_S, T, d, dist, psi);
         }
 
         return [w, X, Z];
     }
 
-    updateTradeFlows(w, L_S, T, d, psi) {
+    updateTradeFlows(w, L_S, T, d, dist, psi) {
         const N = this.countries.length;
-        let X = this.calculateTradeFlows(w, L_S, T, d);
+        let X = this.calculateTradeFlows(w, L_S, T, d, dist);
         
         let Z = X.map((row, i) => {
             const totalExports = row.reduce((sum, x) => sum + x, 0);
@@ -116,7 +117,7 @@ class TradeModel {
         return [w, X, Z];
     }
 
-    calculateTradeFlows(w, L_S, T, d) {
+    calculateTradeFlows(w, L_S, T, d, dist) {
         const theta = 4; // Trade elasticity
         const N = this.countries.length;
         const Xn = w.map((wi, i) => wi * L_S[i]);
@@ -127,7 +128,7 @@ class TradeModel {
 
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < N; j++) {
-                pi_num[i][j] = T[i] * Math.pow(w[i] * d[i][j], -theta);
+                pi_num[i][j] = T[i] * Math.pow(w[i] * d[i][j], -theta) / dist[i][j];
                 Phi[j] += pi_num[i][j];
             }
         }

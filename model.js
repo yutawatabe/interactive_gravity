@@ -45,7 +45,7 @@ class TradeModel {
 
     calculateDistance(country1, country2) {
         if (country1 === country2) {
-            return 0.1;
+            return 1;
         }
         const dx = country1.x - country2.x;
         const dy = country1.y - country2.y;
@@ -60,7 +60,7 @@ class TradeModel {
 
     initializeTariffMatrix() {
         this.tariffMatrix = this.countries.map((_, i) => 
-            this.countries.map((_, j) => i === j ? 1 : 1.5)
+            this.countries.map((_, j) => i === j ? 1 : 1)
         );
     }
 

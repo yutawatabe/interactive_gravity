@@ -8,10 +8,19 @@ class TradeModelView {
 
         // Arrow drawing parameters
         this.arrowHeadLength = 20;
-        this.maxArrowWidth = 100;
-        this.minArrowWidth = 1;
+        this.maxArrowWidth = 50;
+        this.minArrowWidth = 0.5;
         this.curveStrength = 0.2;
-        this.arrowWidthExponent = 0.3;
+        this.arrowWidthExponent = 0.5;
+
+        // Color interpolation parameters
+        this.lowColor = [0, 0, 255];    // Blue RGB
+        this.midColor = [128, 0, 128];  // Purple RGB
+        this.highColor = [255, 0, 0];   // Red RGB
+
+        // Dot size parameters
+        this.minDotRadius = 5;
+        this.maxDotRadius = 20;
 
         this.setupEventListeners();
         this.setupUI();
@@ -135,40 +144,123 @@ class TradeModelView {
     }
 
 
-    drawCountry(country, index) {
+    drawCountry(country, index, radius, Xn) {
         this.ctx.beginPath();
-        this.ctx.arc(country.x, country.y, 5, 0, Math.PI * 2);
+        this.ctx.arc(country.x, country.y, radius, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'rgba(200, 200, 200, 0.8)'; // Light gray with some transparency
         this.ctx.fill();
+        this.ctx.strokeStyle = 'black';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
         
         this.ctx.fillStyle = 'black';
         this.ctx.font = '12px Arial';
-        this.ctx.fillText(`${index + 1}`, country.x + 10, country.y + 5);
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(`${index + 1}`, country.x, country.y);
         
         this.ctx.fillStyle = 'blue';
-        this.ctx.fillText(`P: ${country.productivity.toFixed(1)}`, country.x + 10, country.y + 20);
+        this.ctx.fillText(`P: ${country.productivity.toFixed(1)}`, country.x, country.y + radius + 15);
         
         this.ctx.fillStyle = 'green';
-        this.ctx.fillText(`L: ${country.population.toFixed(1)}`, country.x + 10, country.y + 35);
-        
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillText(`L: ${country.population.toFixed(1)}`, country.x, country.y + radius + 30);
+
+        this.ctx.fillStyle = 'red';
+        this.ctx.fillText(`GDP share: ${(Xn * 100).toFixed(1)}%`, country.x, country.y + radius + 45);
     }
 
     drawTradeFlows(tradeFlows) {
-        const maxFlow = Math.max(...tradeFlows.flat().filter(flow => !isNaN(flow) && isFinite(flow)));
+        const allFlows = tradeFlows.flat().filter(flow => !isNaN(flow) && isFinite(flow) && flow > 0);
+        const maxFlow = Math.max(...allFlows, 0.000001); // Ensure a non-zero max flow
+        const minFlow = Math.min(...allFlows, 0);
+        console.log(`Max flow: ${maxFlow}, Min flow: ${minFlow}`); // Debugging line
+
+        // Calculate Xn (economic size) for each country
+        const Xn = this.calculateEconomicSizes(tradeFlows);
+        const totalXn = Xn.reduce((sum, x) => sum + x, 0);
         
+        console.log(`Economic sizes:`, Xn); // Debugging line
+
+        // Draw trade flows
         for (let i = 0; i < this.model.countries.length; i++) {
             for (let j = 0; j < this.model.countries.length; j++) {
                 if (i !== j) {
                     const flow = tradeFlows[i][j];
-                    if (isNaN(flow) || !isFinite(flow)) continue;
+                    if (isNaN(flow) || !isFinite(flow) || flow <= 0) continue;
                     const startCountry = this.model.countries[i];
                     const endCountry = this.model.countries[j];
                     const arrowWidth = this.mapFlowToArrowWidth(flow, maxFlow);
+                    const color = this.getColorForFlow(flow, minFlow, maxFlow);
                     
-                    this.drawCurvedArrow(startCountry, endCountry, arrowWidth, flow);
+                    this.drawCurvedArrow(startCountry, endCountry, arrowWidth, flow, color);
                 }
             }
         }
+
+        // Draw countries after drawing all arrows
+        this.model.countries.forEach((country, index) => {
+            const dotRadius = this.mapXnToDotRadius(Xn[index], totalXn);
+            this.drawCountry(country, index, dotRadius, Xn[index]);
+        });
+    }
+
+    getColorForFlow(flow, minFlow, maxFlow) {
+        // Use a linear scale instead of logarithmic
+        let t = (flow - minFlow) / (maxFlow - minFlow);
+        
+        // Ensure t is between 0 and 1
+        t = Math.max(0, Math.min(1, t));
+
+        let r, g, b;
+        if (t < 0.5) {
+            // Interpolate between low color and mid color
+            const u = t * 2;
+            r = Math.round(this.lowColor[0] + u * (this.midColor[0] - this.lowColor[0]));
+            g = Math.round(this.lowColor[1] + u * (this.midColor[1] - this.lowColor[1]));
+            b = Math.round(this.lowColor[2] + u * (this.midColor[2] - this.lowColor[2]));
+        } else {
+            // Interpolate between mid color and high color
+            const u = (t - 0.5) * 2;
+            r = Math.round(this.midColor[0] + u * (this.highColor[0] - this.midColor[0]));
+            g = Math.round(this.midColor[1] + u * (this.highColor[1] - this.midColor[1]));
+            b = Math.round(this.midColor[2] + u * (this.highColor[2] - this.midColor[2]));
+        }
+        
+        console.log(`Flow: ${flow}, t: ${t}, Color: rgb(${r}, ${g}, ${b})`); // Debugging line
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    calculateEconomicSizes(tradeFlows) {
+        const n = this.model.countries.length;
+        let Xn = new Array(n).fill(0);
+
+        if (n === 1) {
+            // For a single country, use its productivity and population
+            Xn[0] = this.model.countries[0].productivity * this.model.countries[0].population;
+        } else {
+            // Calculate total exports and imports for each country
+            for (let i = 0; i < n; i++) {
+                const totalExports = tradeFlows[i].reduce((sum, flow) => sum + flow, 0);
+                const totalImports = tradeFlows.reduce((sum, row) => sum + row[i], 0);
+                Xn[i] = totalExports + totalImports;
+            }
+
+            // If all Xn are zero, fall back to productivity * population
+            if (Xn.every(x => x === 0)) {
+                Xn = this.model.countries.map(country => country.productivity * country.population);
+            }
+        }
+
+        // Normalize Xn values
+        const totalXn = Xn.reduce((sum, x) => sum + x, 0);
+        return Xn.map(x => x / totalXn);
+    }
+
+    mapXnToDotRadius(Xn, totalXn) {
+        // Map Xn to a radius between minDotRadius and maxDotRadius
+        // The square root is used to make the area of the dot proportional to Xn
+        const t = Math.sqrt(Xn / totalXn);
+        return this.minDotRadius + t * (this.maxDotRadius - this.minDotRadius);
     }
 
     mapFlowToArrowWidth(flow, maxFlow) {
@@ -177,7 +269,7 @@ class TradeModelView {
         return ((normalizedFlow) * (this.maxArrowWidth - this.minArrowWidth)) + this.minArrowWidth;
     }
 
-    drawCurvedArrow(start, end, width, tradeValue) {
+    drawCurvedArrow(start, end, width, tradeValue, color) {
         const midX = (start.x + end.x) / 2;
         const midY = (start.y + end.y) / 2;
         
@@ -185,7 +277,6 @@ class TradeModelView {
         const dy = end.y - start.y;
         const normalX = -dy;
         const normalY = dx;
-        const length = Math.sqrt(dx * dx + dy * dy);
         
         const controlX = midX + normalX * this.curveStrength;
         const controlY = midY + normalY * this.curveStrength;
@@ -194,11 +285,11 @@ class TradeModelView {
         this.ctx.moveTo(start.x, start.y);
         this.ctx.quadraticCurveTo(controlX, controlY, end.x, end.y);
         this.ctx.lineWidth = width;
-        this.ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
+        this.ctx.strokeStyle = color;
         this.ctx.stroke();
         
         const angle = Math.atan2(end.y - controlY, end.x - controlX);
-        this.drawArrowHead(end.x, end.y, angle, width);
+        this.drawArrowHead(end.x, end.y, angle, width, color);
 
         const labelX = midX + normalX * this.curveStrength * 1.2;
         const labelY = midY + normalY * this.curveStrength * 1.2;
@@ -210,12 +301,12 @@ class TradeModelView {
         this.ctx.fillStyle = 'black';
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText((tradeValue * 100).toFixed(2), 0, 10);
+        this.ctx.fillText((tradeValue * 100).toFixed(2), 0, -5);
         
         this.ctx.restore();
     }
 
-    drawArrowHead(x, y, angle, width) {
+    drawArrowHead(x, y, angle, width, color) {
         this.ctx.save();
         this.ctx.translate(x, y);
         this.ctx.rotate(angle);
@@ -224,7 +315,7 @@ class TradeModelView {
         this.ctx.lineTo(-this.arrowHeadLength, width / 2);
         this.ctx.lineTo(-this.arrowHeadLength, -width / 2);
         this.ctx.closePath();
-        this.ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+        this.ctx.fillStyle = color;
         this.ctx.fill();
         this.ctx.restore();
     }
