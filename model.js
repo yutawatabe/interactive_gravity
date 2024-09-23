@@ -116,8 +116,8 @@ class TradeModel {
         });
 
         w = w.map((w_i, i) => w_i * (1 + psi * (Z[i] / L_S[i])));        
-        //let w_1 = w[0];
-        //w = w.map(w_i => w_i / w_1);
+        let w_1 = w[0];
+        w = w.map(w_i => w_i / w_1);
         
         return [w, X, Z, Y];
     }

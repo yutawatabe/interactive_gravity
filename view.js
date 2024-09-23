@@ -19,7 +19,7 @@ class TradeModelView {
         this.highColor = [255, 0, 0];   // Red RGB
 
         // Dot size parameters
-        this.minDotRadius = 5;
+        this.minDotRadius = 3;
         this.maxDotRadius = 20;
 
         this.setupEventListeners();
@@ -166,7 +166,7 @@ class TradeModelView {
         this.ctx.fillText(`L: ${country.population.toFixed(1)}`, country.x, country.y + radius + 30);
 
         this.ctx.fillStyle = 'red';
-        this.ctx.fillText(`GDP share: ${(Xn * 100).toFixed(1)}%`, country.x, country.y + radius + 45);
+        this.ctx.fillText(`GDP: ${(Xn * 100).toFixed(1)}`, country.x, country.y + radius + 45);
     }
 
     drawTradeFlows(tradeFlows) {
@@ -242,7 +242,7 @@ class TradeModelView {
             for (let i = 0; i < n; i++) {
                 const totalExports = tradeFlows[i].reduce((sum, flow) => sum + flow, 0);
                 const totalImports = tradeFlows.reduce((sum, row) => sum + row[i], 0);
-                Xn[i] = totalExports + totalImports;
+                Xn[i] = totalExports;
             }
 
             // If all Xn are zero, fall back to productivity * population
@@ -251,15 +251,14 @@ class TradeModelView {
             }
         }
 
-        // Normalize Xn values
-        const totalXn = Xn.reduce((sum, x) => sum + x, 0);
-        return Xn.map(x => x / totalXn);
+        return Xn;
     }
 
     mapXnToDotRadius(Xn, totalXn) {
         // Map Xn to a radius between minDotRadius and maxDotRadius
         // The square root is used to make the area of the dot proportional to Xn
-        const t = Math.sqrt(Xn / totalXn);
+        // const t = Math.sqrt(Xn / totalXn);
+        const t = Xn
         return this.minDotRadius + t * (this.maxDotRadius - this.minDotRadius);
     }
 
